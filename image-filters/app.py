@@ -2,10 +2,36 @@ import tkinter as tk
 from tkinter import filedialog
 from PIL import Image, ImageTk
 
-
 CANVAS_W = 420
 CANVAS_H = 420
 
+def image_to_pixels(img):
+    width, height = img.size
+    pixels = list(img.getdata())
+    data = []
+
+    for y in range(height):
+        row = []
+        for x in range(width):
+            row.append(pixels[y * width + x])
+        data.append(row)
+
+    return data
+
+
+def pixels_to_image(data):
+    height = len(data)
+    width = len(data[0])
+
+    img = Image.new("RGB", (width, height))
+    flat = []
+
+    for y in range(height):
+        for x in range(width):
+            flat.append(tuple(data[y][x]))
+
+    img.putdata(flat)
+    return img
 
 class App(tk.Tk):
     def __init__(self):
@@ -90,9 +116,15 @@ class App(tk.Tk):
         if not path:
             return
 
-        self.original_image = Image.open(path).convert("RGB")
-        self._show_on_canvas(self.canvas_left, self.original_image, side="left")
-        self._clear_canvas(self.canvas_right)
+        img = Image.open(path).convert("RGB")
+
+        self.original_image = img
+        self.original_pixels = image_to_pixels(img)
+
+        reconstructed = pixels_to_image(self.original_pixels)
+
+        self._show_on_canvas(self.canvas_left, img, side="left")
+        self._show_on_canvas(self.canvas_right, reconstructed, side="right")
 
     def _clear_canvas(self, canvas: tk.Canvas):
         canvas.delete("all")
