@@ -65,6 +65,40 @@ def mean_filter(pixels, kernel_size):
 
     return result
 
+def median_filter(pixels, kernel_size):
+    h = len(pixels)
+    w = len(pixels[0])
+    k = kernel_size // 2
+
+    result = [[[0, 0, 0] for _ in range(w)] for _ in range(h)]
+
+    for y in range(h):
+        for x in range(w):
+            rs = []
+            gs = []
+            bs = []
+
+            for dy in range(-k, k + 1):
+                for dx in range(-k, k + 1):
+                    yy = clamp(y + dy, 0, h - 1)
+                    xx = clamp(x + dx, 0, w - 1)
+
+                    r, g, b = pixels[yy][xx]
+                    rs.append(r)
+                    gs.append(g)
+                    bs.append(b)
+
+            rs.sort()
+            gs.sort()
+            bs.sort()
+
+            m = len(rs) // 2
+            result[y][x][0] = rs[m]
+            result[y][x][1] = gs[m]
+            result[y][x][2] = bs[m]
+
+    return result
+
 class App(tk.Tk):
     def __init__(self):
         super().__init__()
@@ -169,8 +203,12 @@ class App(tk.Tk):
         if k < 1 or k % 2 == 0:
             return
 
-        if self.filter_var.get() == "mean":
+        mode = self.filter_var.get()
+
+        if mode == "mean":
             out_pixels = mean_filter(self.original_pixels, k)
+        elif mode == "median":
+            out_pixels = median_filter(self.original_pixels, k)
         else:
             return
 
