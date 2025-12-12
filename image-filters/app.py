@@ -99,6 +99,60 @@ def median_filter(pixels, kernel_size):
 
     return result
 
+def to_grayscale(pixels):
+    h = len(pixels)
+    w = len(pixels[0])
+    gray = [[0 for _ in range(w)] for _ in range(h)]
+
+    for y in range(h):
+        for x in range(w):
+            r, g, b = pixels[y][x]
+            v = int(0.299 * r + 0.587 * g + 0.114 * b)
+            gray[y][x] = v
+
+    return gray
+
+def sobel_filter(pixels):
+    h = len(pixels)
+    w = len(pixels[0])
+
+    gray = to_grayscale(pixels)
+    result = [[[0, 0, 0] for _ in range(w)] for _ in range(h)]
+
+    gx_kernel = [
+        [-1, 0, 1],
+        [-2, 0, 2],
+        [-1, 0, 1],
+    ]
+    gy_kernel = [
+        [1, 2, 1],
+        [0, 0, 0],
+        [-1, -2, -1],
+    ]
+
+    for y in range(h):
+        for x in range(w):
+            gx = 0
+            gy = 0
+
+            for ky in range(-1, 2):
+                for kx in range(-1, 2):
+                    yy = clamp(y + ky, 0, h - 1)
+                    xx = clamp(x + kx, 0, w - 1)
+                    p = gray[yy][xx]
+
+                    gx += p * gx_kernel[ky + 1][kx + 1]
+                    gy += p * gy_kernel[ky + 1][kx + 1]
+
+            mag = abs(gx) + abs(gy)
+            mag = clamp(mag, 0, 255)
+
+            result[y][x][0] = mag
+            result[y][x][1] = mag
+            result[y][x][2] = mag
+
+    return result
+
 class App(tk.Tk):
     def __init__(self):
         super().__init__()
@@ -209,6 +263,8 @@ class App(tk.Tk):
             out_pixels = mean_filter(self.original_pixels, k)
         elif mode == "median":
             out_pixels = median_filter(self.original_pixels, k)
+        elif mode == "sobel":
+            out_pixels = sobel_filter(self.original_pixels)
         else:
             return
 
