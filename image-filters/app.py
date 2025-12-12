@@ -33,12 +33,44 @@ def pixels_to_image(data):
     img.putdata(flat)
     return img
 
+def clamp(v, lo, hi):
+    return max(lo, min(v, hi))
+
+
+def mean_filter(pixels, kernel_size):
+    h = len(pixels)
+    w = len(pixels[0])
+    k = kernel_size // 2
+
+    result = [[[0, 0, 0] for _ in range(w)] for _ in range(h)]
+
+    for y in range(h):
+        for x in range(w):
+            rs = gs = bs = count = 0
+
+            for dy in range(-k, k + 1):
+                for dx in range(-k, k + 1):
+                    yy = clamp(y + dy, 0, h - 1)
+                    xx = clamp(x + dx, 0, w - 1)
+
+                    r, g, b = pixels[yy][xx]
+                    rs += r
+                    gs += g
+                    bs += b
+                    count += 1
+
+            result[y][x][0] = rs // count
+            result[y][x][1] = gs // count
+            result[y][x][2] = bs // count
+
+    return result
+
 class App(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("Filtry obrazu")
-        self.geometry("920x760")
-        self.resizable(False, False)
+        self.geometry("920x860")
+        self.resizable(True, True)
 
         self.original_image = None
         self.original_preview_tk = None
@@ -52,6 +84,9 @@ class App(tk.Tk):
 
         btn = tk.Button(top, text="Wczytaj obraz", height=2, command=self.load_image)
         btn.pack(fill="x")
+
+        apply_btn = tk.Button(top, text="Zastosuj filtr", height=2, command=self.apply_filter)
+        apply_btn.pack(fill="x", pady=(8, 0))
 
         panels = tk.Frame(self, padx=16, pady=10)
         panels.pack(fill="x")
@@ -125,6 +160,22 @@ class App(tk.Tk):
 
         self._show_on_canvas(self.canvas_left, img, side="left")
         self._show_on_canvas(self.canvas_right, reconstructed, side="right")
+
+    def apply_filter(self):
+        if self.original_pixels is None:
+            return
+
+        k = self.kernel_size_var.get()
+        if k < 1 or k % 2 == 0:
+            return
+
+        if self.filter_var.get() == "mean":
+            out_pixels = mean_filter(self.original_pixels, k)
+        else:
+            return
+
+        out_img = pixels_to_image(out_pixels)
+        self._show_on_canvas(self.canvas_right, out_img, side="right")
 
     def _clear_canvas(self, canvas: tk.Canvas):
         canvas.delete("all")
