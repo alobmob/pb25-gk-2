@@ -153,6 +153,22 @@ def sobel_filter(pixels):
 
     return result
 
+def binarize_filter(pixels, threshold):
+    h = len(pixels)
+    w = len(pixels[0])
+
+    gray = to_grayscale(pixels)
+    result = [[[0, 0, 0] for _ in range(w)] for _ in range(h)]
+
+    for y in range(h):
+        for x in range(w):
+            v = 255 if gray[y][x] >= threshold else 0
+            result[y][x][0] = v
+            result[y][x][1] = v
+            result[y][x][2] = v
+
+    return result
+
 class App(tk.Tk):
     def __init__(self):
         super().__init__()
@@ -265,6 +281,9 @@ class App(tk.Tk):
             out_pixels = median_filter(self.original_pixels, k)
         elif mode == "sobel":
             out_pixels = sobel_filter(self.original_pixels)
+        elif mode == "binarize":
+            t = self.threshold_var.get()
+            out_pixels = binarize_filter(self.original_pixels, t)
         else:
             return
 
